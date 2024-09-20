@@ -132,21 +132,19 @@ func (h *ProductHandlerMongo) ListProducts(c *fiber.Ctx) error {
 func (h *ProductHandlerMongo) DeleteProduct(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	var err error
-	if primitive.IsValidObjectID(id) {
-		objectID, _ := primitive.ObjectIDFromHex(id)
-		err = h.Service.DeleteProduct(objectID)
-	} else {
-		uintID, err := strconv.ParseUint(id, 10, 32)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid product ID"})
-		}
-		err = h.Service.DeleteProduct(uint(uintID))
+	if !primitive.IsValidObjectID(id) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid product ID for MongoDB"})
 	}
 
+	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		if err.Error() == "ID: Not Found" {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "ID: Not Found"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid product ID"})
+	}
+
+	err = h.Service.DeleteProduct(objectID)
+	if err != nil {
+		if err.Error() == "ID Not Found" {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "ID not found"})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}

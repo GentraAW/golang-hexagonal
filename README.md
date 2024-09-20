@@ -4,46 +4,54 @@
 
 Proyek ini adalah contoh implementasi Arsitektur Hexagonal dengan Golang menggunakan Go Fiber sebagai framework web dan Gorm untuk ORM dengan PostgreSQL.
 
-## Instalasi Dependensi
+## Setup Proyek
 
-1. Inisialisasi modul Go:
+1. Inisialisasi Proyek: Jika kamu belum menginisialisasi modul Go, jalankan perintah berikut untuk memulai modul:
 
    ```sh
    go mod init go-hexagon
    ```
 
-2. Instal Go Fiber:
+2. Instalasi Dependensi: Jalankan perintah berikut untuk menginstal semua dependensi yang diperlukan
+
+- Go Fiber sebagai web framework:
+   ```sh
+   go get github.com/gofiber/fiber/v2
+   ```
+   
+- GORM sebagai ORM untuk MySQL:
 
    ```sh
-   go get -u github.com/gofiber/fiber/v2
+   go get gorm.io/gorm
+   go get gorm.io/driver/mysql
    ```
 
-3. Instal GORM sebagai ORM untuk database SQL:
+- Instal MongoDB driver:
 
    ```sh
-    go get -u gorm.io/gorm
-    go get -u gorm.io/driver/postgres
+   go get go.mongodb.org/mongo-driver/mongo
    ```
 
-4. Instal MongoDB driver:
+- Testify untuk testing:
 
-   ```sh
-    go get go.mongodb.org/mongo-driver/mongo
+  ```sh
+   go get github.com/stretchr/testify
    ```
 
-5. Mengelola dependensi:
+3. Mengelola Dependensi: Setelah menginstal dependensi, jalankan perintah berikut untuk membersihkan dan merapikan modul:
+
    ```sh
    go mod tidy
    ```
 
 ## Cara Menjalankan Aplikasi
 
-1. Pastikan PostgreSQL dan MongoDB berjalan.
-2. Jalankan aplikasi:
-   Ke PostgreSQL
+1. Pastikan MySQL dan MongoDB berjalan.
+2. Jalankan aplikasi dengan database yang diinginkan:
+   Ke MySQL
 
    ```
-   go run cmd\main.go --db=postgres
+   go run cmd\main.go --db=mysql
    ```
 
    Ke MongoDB
@@ -53,18 +61,41 @@ Proyek ini adalah contoh implementasi Arsitektur Hexagonal dengan Golang menggun
    ```
 
 ## API Endpoint
+* Untuk endpoint mongo dan mysql sama
 
-- GET /check-postgres - Cek koneksi ke PostgreSQL
 - GET /check-mongo - Cek koneksi ke MongoDB
+![Screenshot](assets/ss1.png "Cek koneksi ke Mongo")
 - GET /products - Mendapatkan daftar produk
+![Screenshot](assets/ss2.png "Get list product")
 - GET /products/:id - Mendapatkan detail produk berdasarkan ID
+![Screenshot](assets/ss3.png "Get by id")
 - POST /products - Membuat produk baru
+![Screenshot](assets/ss4.png "Create product")
 - PUT /products/:id - Memperbarui produk berdasarkan ID
+![Screenshot](assets/ss5.png "Update product by id")
 - DELETE /products/:id - Menghapus produk berdasarkan ID
+![Screenshot](assets/ss6.png "Delete product by id")
+
+## Cara Menjalankan Unittest
+
+Proyek ini menggunakan Testify untuk menulis unit test. Berikut adalah langkah untuk menjalankan unittest:
+
+1. Jalankan perintah berikut untuk menjalankan semua unit test di proyek:
+
+   ```
+   go test ./tests
+   ```
 
 ## Penjelasan Arsitektur Hexagonal
 
-Arsitektur Hexagonal (atau Ports and Adapters) adalah pola desain software yang memisahkan core logic dari infrastruktur dan framework. Ini memudahkan untuk mengubah komponen eksternal tanpa mengganggu logika inti.
+Arsitektur Hexagonal (atau Ports and Adapters) adalah pola desain perangkat lunak yang memisahkan logika bisnis inti dari komponen eksternal seperti framework web atau database. Dengan cara ini, aplikasi menjadi lebih fleksibel untuk diubah tanpa mempengaruhi logika inti.
+
+Komponen Utama:
+- Entity: Mewakili objek domain, seperti Product, yang menjadi pusat logika bisnis.
+- Port: Antarmuka yang menghubungkan core (logika bisnis) dengan adapter eksternal seperti database.
+- Service: Implementasi dari logika bisnis, yang memanggil port untuk berinteraksi dengan data.
+- Repository: Adapter yang bertugas mengimplementasikan port untuk berkomunikasi dengan database, seperti MySQL atau MongoDB.
+- Handler: Menghubungkan HTTP request dari client ke service.
 
 ## Keuntungan Menggunakan Arsitektur Hexagonal
 
@@ -72,23 +103,3 @@ Arsitektur Hexagonal (atau Ports and Adapters) adalah pola desain software yang 
 2. Fleksibilitas: Memungkinkan penggunaan berbagai teknologi tanpa mempengaruhi logika inti aplikasi.
 3. Pengujian Mudah: Memudahkan penulisan tes unit karena komponen-komponen yang berbeda dapat diuji secara terpisah.
 4. Skalabilitas: Membantu dalam membangun aplikasi yang dapat diskalakan dengan memisahkan kekhawatiran antara komponen.
-
-## Perbedaan dengan Arsitektur Lainnya
-
-1. Monolitik:
-
-- Karakteristik: Semua komponen aplikasi terintegrasi dalam satu kode besar.
-- Kelemahan: Sulit untuk diskalakan dan dipelihara, terutama ketika aplikasi tumbuh besar.
-- Perbandingan: Arsitektur Hexagonal lebih modular dan terisolasi, memudahkan pemeliharaan dan pengujian.
-
-2. Layered (N-Tier) Architecture:
-
-- Karakteristik: Memisahkan aplikasi menjadi lapisan-lapisan seperti presentasi, bisnis, dan data.
-- Kelemahan: Ketergantungan antar lapisan bisa menjadi masalah, dan perubahan pada satu lapisan bisa mempengaruhi lapisan lain.
-- Perbandingan: Arsitektur Hexagonal menawarkan isolasi yang lebih baik antara komponen dengan menggunakan port dan adapter.
-
-3. Microservices:
-
-- Karakteristik: Memecah aplikasi menjadi layanan-layanan kecil yang dapat dikelola dan diskalakan secara independen.
-- Kelemahan: Kompleksitas dalam pengelolaan layanan-layanan yang terdistribusi.
-- Perbandingan: Arsitektur Hexagonal dapat digunakan dalam konteks microservices untuk memastikan setiap layanan memiliki logika bisnis yang terisolasi.
