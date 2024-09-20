@@ -22,6 +22,10 @@ func (h *ProductHandlerMySQL) CreateProduct(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	if product.Name == "" || product.Stock == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Name and Stock fields are required"})
+	}
+
 	if err := h.Service.CreateProduct(product); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -49,24 +53,26 @@ func (h *ProductHandlerMySQL) UpdateProduct(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	// Parse the updated product details
-	var product entity.Product
-	if err := c.BodyParser(&product); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	var updatedProduct entity.Product
+	if err := c.BodyParser(&updatedProduct); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid input format"})
 	}
 
-	// Set the MySQLID of the product to be updated
-	product.MySQLID = existingProduct.MySQLID
+	if updatedProduct.Name != "" {
+		existingProduct.Name = updatedProduct.Name
+	}
+	if updatedProduct.Stock != 0 {
+		existingProduct.Stock = updatedProduct.Stock
+	}
 
-	// Update product
-	if err := h.Service.UpdateProduct(&product); err != nil {
+	if err := h.Service.UpdateProduct(existingProduct); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id":    product.MySQLID,
-		"name":  product.Name,
-		"stock": product.Stock,
+		"id":    existingProduct.MySQLID,
+		"name":  existingProduct.Name,
+		"stock": existingProduct.Stock,
 	})
 }
 
@@ -76,10 +82,8 @@ func (h *ProductHandlerMySQL) GetProductByID(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid product ID"})
 	}
 
-	// Convert ID to uint
 	productID := uint(id)
 
-	// Call service to get product by ID
 	product, err := h.Service.GetProductByID(productID)
 	if err != nil {
 		if err.Error() == "ID not found" || err.Error() == "record not found" {

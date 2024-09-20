@@ -24,6 +24,10 @@ func (h *ProductHandlerMongo) CreateProduct(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	if product.Name == "" || product.Stock == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Name and Stock fields are required"})
+	}
+
 	if err := h.Service.CreateProduct(product); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -37,26 +41,45 @@ func (h *ProductHandlerMongo) CreateProduct(c *fiber.Ctx) error {
 
 func (h *ProductHandlerMongo) UpdateProduct(c *fiber.Ctx) error {
 	id := c.Params("id")
-	var product entity.Product
-	if err := c.BodyParser(&product); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+
+	// Validasi apakah ID yang diberikan adalah ObjectID MongoDB
+	if !primitive.IsValidObjectID(id) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid product ID"})
 	}
 
-	if primitive.IsValidObjectID(id) {
-		product.MongoID, _ = primitive.ObjectIDFromHex(id)
-	} else {
-		uintID, err := strconv.ParseUint(id, 10, 32)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid product ID"})
-		}
-		product.MySQLID = uint(uintID)
+	// Konversi ID menjadi ObjectID
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid product ID"})
 	}
 
-	if err := h.Service.UpdateProduct(&product); err != nil {
+	// Ambil produk yang ada dari MongoDB
+	existingProduct, err := h.Service.GetProductByID(objectID)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Product not found"})
+	}
+
+	// Parsing request body untuk produk yang akan diupdate
+	var updatedProduct entity.Product
+	if err := c.BodyParser(&updatedProduct); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid input format"})
+	}
+
+	// Update field yang diberikan, jika field kosong, pertahankan nilai lama
+	if updatedProduct.Name != "" {
+		existingProduct.Name = updatedProduct.Name
+	}
+	if updatedProduct.Stock != 0 {
+		existingProduct.Stock = updatedProduct.Stock
+	}
+
+	// Simpan produk yang telah diupdate ke MongoDB
+	if err := h.Service.UpdateProduct(existingProduct); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(product)
+	// Kembalikan produk yang telah diperbarui
+	return c.Status(fiber.StatusOK).JSON(existingProduct)
 }
 
 func (h *ProductHandlerMongo) GetProductByID(c *fiber.Ctx) error {
@@ -64,6 +87,7 @@ func (h *ProductHandlerMongo) GetProductByID(c *fiber.Ctx) error {
 
 	var product *entity.Product
 	var err error
+
 	if primitive.IsValidObjectID(id) {
 		objectID, _ := primitive.ObjectIDFromHex(id)
 		product, err = h.Service.GetProductByID(objectID)
@@ -72,11 +96,15 @@ func (h *ProductHandlerMongo) GetProductByID(c *fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid product ID"})
 		}
-		product, err = h.Service.GetProductByID(uint(uintID))
+		product, err = h.Service.GetProductByID(uint(uintID)) // Service MySQL
 	}
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	if product == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Product not found"})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
