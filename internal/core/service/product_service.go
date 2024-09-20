@@ -9,7 +9,7 @@ type ProductService struct {
 	Repo port.ProductRepository
 }
 
-func NewProductService(repo port.ProductRepository) *ProductService{
+func NewProductService(repo port.ProductRepository) *ProductService {
 	return &ProductService{Repo: repo}
 }
 
@@ -21,7 +21,7 @@ func (s *ProductService) UpdateProduct(product *entity.Product) error {
 	return s.Repo.Update(product)
 }
 
-func (s *ProductService) GetProductByID(id uint) (*entity.Product, error) {
+func (s *ProductService) GetProductByID(id interface{}) (*entity.Product, error) {
 	return s.Repo.GetByID(id)
 }
 
@@ -29,6 +29,6 @@ func (s *ProductService) ListProducts() ([]entity.Product, error) {
 	return s.Repo.List()
 }
 
-func (s *ProductService) DeleteProduct(id uint) error {
+func (s *ProductService) DeleteProduct(id interface{}) error {
 	return s.Repo.Delete(id)
 }

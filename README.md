@@ -4,42 +4,6 @@
 
 Proyek ini adalah contoh implementasi Arsitektur Hexagonal dengan Golang menggunakan Go Fiber sebagai framework web dan Gorm untuk ORM dengan PostgreSQL.
 
-## Struktur Proyek
-
-│ go.mod
-│ go.sum
-│ Note.txt
-│
-├───cmd
-│ main.go
-│
-└───internal
-├───adapter
-│ ├───database
-│ │ │ mongo.go
-│ │ │ postgres.go
-│ │ │
-│ │ └───repository
-│ │ product_repository_postgres.go
-│ │
-│ ├───handler
-│ │ └───rest
-│ │ product_handler_postgres.go
-│ │
-│ └───routes
-│ product_routes_postgres.go
-│
-└───core
-├───domain
-│ └───entity
-│ product_entity.go
-│
-├───port
-│ product_port_postgres.go
-│
-└───service
-product_service_postgres.go
-
 ## Instalasi Dependensi
 
 1. Inisialisasi modul Go:
@@ -80,14 +44,12 @@ product_service_postgres.go
 
    ```
    go run cmd\main.go --db=postgres
-
    ```
 
    Ke MongoDB
 
    ```
    go run cmd\main.go --db=mongodb
-
    ```
 
 ## API Endpoint
